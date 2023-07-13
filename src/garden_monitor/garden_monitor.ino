@@ -1,13 +1,8 @@
-/**********************************************************************
-  Filename    : Control LED through Infrared Remote
-  Description : Remote control the LED with the infrared remote control.
-  Auther      : www.freenove.com
-  Modification: 2021/10/13
-**********************************************************************/
 #include "IR.h"
 #include <dht.h>
 
 dht DHT;
+
 #define ledYellow 12
 #define ledBlue 13
 #define ledGreen 14
@@ -15,25 +10,7 @@ dht DHT;
 #define irPin 16
 #define waterPump 17
 #define buzzerPin 18
-#define latchPin 19
-#define clockPin 20
-#define dataPin 21
-#define DHT11Pin 22
-
-//     A
-//    ---
-// F |   | B
-//   | G |
-//    ---
-// E |   | C
-//   |   |
-//    ---
-//     D
-
-
-// A, B, C, D, E, F, G, .
-int pinDisplay[] = {0,1,2,3,4,5,6,7};
-int displaySelect[] = {8,9,10,11};
+#define DHT11Pin 19
 
 int c = 0;
 
@@ -46,52 +23,37 @@ void setup() {
   pinMode(ledBlue, OUTPUT);
   pinMode(waterPump, OUTPUT);
   pinMode(buzzerPin, OUTPUT);
-  for(int i = 0; i < 8; i++){
-    pinMode(pinDisplay[i], OUTPUT); 
-  }
-  for(int i = 0; i < 4; i++){
-    pinMode(displaySelect[i], OUTPUT); 
-  }
-  init();
+
+  hum();
+  digitalWrite(ledRed, HIGH);
 }
 
-float DHTMeasure(int type){
+int DHTMeasure(int type){
+  int32_t return_value = 0;
   int chk = DHT.read11(DHT11Pin);
   if(chk == DHTLIB_OK){
     if(type == 0){
-      Serial.println("humidity: " + String(DHT.humidity) + "%, temperature: " + String(DHT.temperature) + "C");
-      return DHT.humidity;
+      Serial.println("Humidity: " + String(DHT.humidity) + "%");
+      return_value = (int32_t) (DHT.humidity * 100);
     }
     else{
-      return DHT.temperature;
+      Serial.println("Temperature: " + String(DHT.temperature) + "C");
+      return_value = (int32_t) (DHT.temperature * 100);
     }
   }
-  return -1.0;
-}
-
-void init(){
-  hum();
-  digitalWrite(ledRed, HIGH);
-  numDisplay(1,0);
-  delay(250);
-  numDisplay(2,1);
-  delay(250);
-  numDisplay(6,2);
-  delay(250);
-  numDisplay(8,3);
-  delay(250);
+  return return_value;
 }
 
 void hum(){
   digitalWrite(ledYellow, LOW);     // Turn off yellow LED 
   digitalWrite(ledBlue, HIGH);      // Turn on blue LED
-  float hum = DHTMeasure(0);
+  int32_t hum = DHTMeasure(0);
 }
 
 void temp(){
   digitalWrite(ledBlue, LOW);       // Turn off blue LED 
   digitalWrite(ledYellow, HIGH);    // Turn on yellow LED
-  float temp = DHTMeasure(1);
+  int temp = DHTMeasure(1);
 }
 
 void loop() {
@@ -128,111 +90,5 @@ void handleControl(unsigned long value) {
     case 0xFF18E7:                      // Receive the number '2' TEMP Mode
       temp();
       break;
-  }
-}
-
-void numDisplay(int num, int DS){
-  for(int i = 0; i < 4; i++)
-  {
-    digitalWrite(displaySelect[i], LOW);
-  }  
-  digitalWrite(displaySelect[DS], HIGH);
-
-  switch(num){
-    case 0:
-      digitalWrite(pinDisplay[0], LOW);
-      digitalWrite(pinDisplay[1], LOW);
-      digitalWrite(pinDisplay[2], LOW);
-      digitalWrite(pinDisplay[3], LOW);
-      digitalWrite(pinDisplay[4], LOW);
-      digitalWrite(pinDisplay[5], LOW);
-      digitalWrite(pinDisplay[6], HIGH);
-      digitalWrite(pinDisplay[7], HIGH);
-    case 1:
-      digitalWrite(pinDisplay[0], HIGH);
-      digitalWrite(pinDisplay[1], LOW);
-      digitalWrite(pinDisplay[2], LOW);
-      digitalWrite(pinDisplay[3], HIGH);
-      digitalWrite(pinDisplay[4], HIGH);
-      digitalWrite(pinDisplay[5], HIGH);
-      digitalWrite(pinDisplay[6], HIGH);
-      digitalWrite(pinDisplay[7], HIGH);
-    case 2:
-      digitalWrite(pinDisplay[0], LOW);
-      digitalWrite(pinDisplay[1], LOW);
-      digitalWrite(pinDisplay[2], HIGH);
-      digitalWrite(pinDisplay[3], LOW);
-      digitalWrite(pinDisplay[4], LOW);
-      digitalWrite(pinDisplay[5], HIGH);
-      digitalWrite(pinDisplay[6], LOW);
-      digitalWrite(pinDisplay[7], HIGH);
-    case 3:
-      digitalWrite(pinDisplay[0], LOW);
-      digitalWrite(pinDisplay[1], LOW);
-      digitalWrite(pinDisplay[2], LOW);
-      digitalWrite(pinDisplay[3], LOW);
-      digitalWrite(pinDisplay[4], HIGH);
-      digitalWrite(pinDisplay[5], HIGH);
-      digitalWrite(pinDisplay[6], LOW);
-      digitalWrite(pinDisplay[7], HIGH);
-    case 4:
-      digitalWrite(pinDisplay[0], HIGH);
-      digitalWrite(pinDisplay[1], LOW);
-      digitalWrite(pinDisplay[2], LOW);
-      digitalWrite(pinDisplay[3], HIGH);
-      digitalWrite(pinDisplay[4], HIGH);
-      digitalWrite(pinDisplay[5], LOW);
-      digitalWrite(pinDisplay[6], LOW);
-      digitalWrite(pinDisplay[7], HIGH);
-    case 5:
-      digitalWrite(pinDisplay[0], LOW);
-      digitalWrite(pinDisplay[1], HIGH);
-      digitalWrite(pinDisplay[2], LOW);
-      digitalWrite(pinDisplay[3], LOW);
-      digitalWrite(pinDisplay[4], HIGH);
-      digitalWrite(pinDisplay[5], LOW);
-      digitalWrite(pinDisplay[6], LOW);
-      digitalWrite(pinDisplay[7], HIGH);
-    case 6:
-      digitalWrite(pinDisplay[0], LOW);
-      digitalWrite(pinDisplay[1], HIGH);
-      digitalWrite(pinDisplay[2], LOW);
-      digitalWrite(pinDisplay[3], LOW);
-      digitalWrite(pinDisplay[4], LOW);
-      digitalWrite(pinDisplay[5], LOW);
-      digitalWrite(pinDisplay[6], LOW);
-      digitalWrite(pinDisplay[7], HIGH);
-    case 7:
-      digitalWrite(pinDisplay[0], LOW);
-      digitalWrite(pinDisplay[1], LOW);
-      digitalWrite(pinDisplay[2], LOW);
-      digitalWrite(pinDisplay[3], HIGH);
-      digitalWrite(pinDisplay[4], HIGH);
-      digitalWrite(pinDisplay[5], HIGH);
-      digitalWrite(pinDisplay[6], HIGH);
-      digitalWrite(pinDisplay[7], HIGH);
-    case 8:
-      digitalWrite(pinDisplay[0], LOW);
-      digitalWrite(pinDisplay[1], LOW);
-      digitalWrite(pinDisplay[2], LOW);
-      digitalWrite(pinDisplay[3], LOW);
-      digitalWrite(pinDisplay[4], LOW);
-      digitalWrite(pinDisplay[5], LOW);
-      digitalWrite(pinDisplay[6], LOW);
-      digitalWrite(pinDisplay[7], HIGH);
-    case 9:
-      digitalWrite(pinDisplay[0], LOW);
-      digitalWrite(pinDisplay[1], LOW);
-      digitalWrite(pinDisplay[2], LOW);
-      digitalWrite(pinDisplay[3], LOW);
-      digitalWrite(pinDisplay[4], HIGH);
-      digitalWrite(pinDisplay[5], LOW);
-      digitalWrite(pinDisplay[6], LOW);
-      digitalWrite(pinDisplay[7], HIGH);    
-  }
-
-  if(DS == 1)
-  {
-    digitalWrite(pinDisplay[7], LOW);
   }
 }
