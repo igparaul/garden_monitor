@@ -12,22 +12,22 @@ dht DHT;
 #define ledGreen 14
 #define ledRed 15
 
-int comPin[] = {19, 18, 17, 16};// Common pin (anode) of 4 digit 7-segment display
+int comPin[] = {19, 18, 17, 16}; // Common pin (anode) of 4 digit 7-segment display, one per 7-segment display
 
-int dataPin = 20;
+int dataPin = 20; //
 int latchPin = 21;
 int clockPin = 22;
 
-// Define the encoding of characters 0-F of the common-anode 7-Segment Display
-byte num[] = {0xc0, 0xf9, 0xa4, 0xb0, 0x99, 0x92, 0x82, 0xf8, 0x80, 0x90};
+byte num[] = {0xc0, 0xf9, 0xa4, 0xb0, 0x99, 0x92, 0x82, 0xf8, 0x80, 0x90}; //Define encoding of characters 0-9
 
-int c = 0;
-int type = 0;
-int digits[4];
-int last_hum = 0;
-int last_temp = 0;
+int counter = 0;    // Counter if the water pump is ON or not
+int type = 0;       // Variable for the type of measure of the DHT11 sensor
+int digits[4];      // Array of the 4 digits of the DHT11 measure
+int last_hum = 0;   // Last humidity measure
+int last_temp = 0;  // Last temperature measure
 
 void setup() {
+  // Establishing OUTPUT pins
   Serial.begin(115200);
   IR_Init(irPin);
   pinMode(ledRed, OUTPUT);
@@ -45,22 +45,25 @@ void setup() {
     pinMode(comPin[i], OUTPUT);
   }
 
+  // Init values
   hum();
   digitalWrite(ledRed, HIGH);
 }
 
 void loop() {
-  int new_temp = 0;
-  int new_hum = 0;
-  if(flagCode){
-    int irValue = IR_Decode(flagCode);
-    //Serial.println(irValue, HEX);
+  int new_temp = 0; // New temperature measure
+  int new_hum = 0;  // New humidity measure
+  // If there is pressed any button of the remote control, we convert it as HEX and we send it to the handleControl. After that we let the IR receiver listen again.
+  if(flagCode){ 
+    int irValue = IR_Decode(flagCode); 
     handleControl(irValue);
     IR_Release();
   }
 
-  if(type == 0)
+
+  if(type == 0) // If the program mode is humidity
   {
+    // We check new humidity and if is different than the last_hum, we overwrite the last_hum variable with the new_hum value, and we parse the number
     new_hum = DHTMeasure(type, true);
     if (new_hum != last_hum)
     {
@@ -68,10 +71,12 @@ void loop() {
       parse_digits(last_hum);
     }
   }
-  else
+  else // If the program mode is temperature
   {
+    // We check new temperature and if it has varied 0.5 C, we overwrite the last_temp variable with the new_temp value, and we parse the number
     new_temp = DHTMeasure(type, true);
-    if (new_temp != last_temp)
+    //if (abs(new_temp - last_temp) < 50)
+    if ((new_temp % 50) == 0 && new_temp != last_temp)
     {
       last_temp = new_temp;
       parse_digits(last_temp);
@@ -91,33 +96,28 @@ void loop() {
 
 int DHTMeasure(int type, bool check){
   int measure = 0;
-  int aux = 0;
   int chk = DHT.read11(DHT11Pin);
 
   if(chk == DHTLIB_OK){
     if(type == 0){
-      Serial.println("Humidity: " + String(DHT.humidity) + "%");
-      measure = (int) (DHT.humidity * 100);
+      measure = (int) (DHT.humidity * 100); // We multiply the value per 100 and we cast it as integer
     }
     else{
-      Serial.println("Temperature: " + String(DHT.temperature) + "C");
-      measure = (int) (DHT.temperature * 100);
+      measure = (int) (DHT.temperature * 100); // We multiply the value per 100 and we cast it as integer
     }
   }
 
-  aux = measure;
-
-  if(check == true){
-    return aux;
+  if(check == true){ // If the check flag is active we return the value
+     return measure;
   }
-  else
+  else // If is not we parse the number
   {
     parse_digits(measure);
     return 0;
   }
 }
 
-void parse_digits(int num)
+void parse_digits(int num) // We set 4 sized array every digit of the measure value
 {
   int i = 3;
   while(num > 0){
@@ -130,41 +130,54 @@ void parse_digits(int num)
 void hum(){
   digitalWrite(ledYellow, LOW);     // Turn off yellow LED 
   digitalWrite(ledBlue, HIGH);      // Turn on blue LED
-  type = 0;
-  DHTMeasure(type, false);
+  type = 0;                         // Set type -> humidity
+  DHTMeasure(type, false);          // Measure of humidity
 }
 
 void temp(){
   digitalWrite(ledBlue, LOW);       // Turn off blue LED 
   digitalWrite(ledYellow, HIGH);    // Turn on yellow LED
-  type = 1;
-  DHTMeasure(type, false);
+  type = 1;                         // Set type -> temperature
+  DHTMeasure(type, false);          // Measure of temperature
 }
 
 void handleControl(unsigned long value) {
-  digitalWrite(buzzerPin, HIGH);
-  delay(100);
-  digitalWrite(buzzerPin, LOW);
+  
+  
   // Handle the commands
   switch (value) {
     case 0xFFA25D:                       // Receive POWER ON/OFF button
-      if (c == 0){                       
+      // We make a feedback sound at pressing the remote control button
+      digitalWrite(buzzerPin, HIGH);
+      delay(100);
+      digitalWrite(buzzerPin, LOW);
+      if (counter == 0){                       
         digitalWrite(ledGreen, HIGH);    // Turn ON green LED
         digitalWrite(ledRed, LOW);       // Turn OFF red LED
-        c = 1;
+        digitalWrite(waterPump, HIGH);   // Turn ON the water pump
+        counter = 1;                     // Establishing the waterPump as ON
         break;
       }
       else{
         digitalWrite(ledGreen, LOW);     // Turn OFF green LED
         digitalWrite(ledRed, HIGH);      // Turn ON red LED
-        c = 0;
+        digitalWrite(waterPump, LOW);    // Turn OFF the water pump
+        counter = 0;                     // Establishing the water pump as OFF
         break;
       }
     case 0xFF30CF:                      // Receive the number '1' HUM Mode
-      hum();
+      // We make a feedback sound at pressing the remote control button
+      digitalWrite(buzzerPin, HIGH);
+      delay(100);
+      digitalWrite(buzzerPin, LOW);
+      hum();                            // Calling the humidity process
       break;
     case 0xFF18E7:                      // Receive the number '2' TEMP Mode
-      temp();
+      // We make a feedback sound at pressing the remote control button
+      digitalWrite(buzzerPin, HIGH);
+      delay(100);
+      digitalWrite(buzzerPin, LOW);
+      temp();                           // Calling the temperature process
       break;
   }
 }
@@ -182,13 +195,13 @@ void writeData(int value, int i) {
   // Make latchPin output low level
   digitalWrite(latchPin, LOW);
   // Send serial data to 74HC595
-  if (i == 1)
+  if (i == 1) // If the 7-segment display is the second one
   {
-     shiftOut(dataPin,clockPin, LSBFIRST, value & 0x7f);
+     shiftOut(dataPin,clockPin, LSBFIRST, value & 0x7f); // We send it but activate the dot display also
   }
   else
   {
-    shiftOut(dataPin, clockPin, LSBFIRST, value);  // Make latchPin output high level
+    shiftOut(dataPin, clockPin, LSBFIRST, value); 
   }
   // Make latchPin output high level, then 74HC595 will update data to parallel output
   digitalWrite(latchPin, HIGH);
