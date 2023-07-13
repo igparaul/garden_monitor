@@ -14,7 +14,7 @@ dht DHT;
 
 int comPin[] = {19, 18, 17, 16}; // Common pin (anode) of 4 digit 7-segment display, one per 7-segment display
 
-int dataPin = 20; //
+int dataPin = 20; 
 int latchPin = 21;
 int clockPin = 22;
 
@@ -53,14 +53,14 @@ void setup() {
 void loop() {
   int new_temp = 0; // New temperature measure
   int new_hum = 0;  // New humidity measure
+  
   // If there is pressed any button of the remote control, we convert it as HEX and we send it to the handleControl. After that we let the IR receiver listen again.
   if(flagCode){ 
     int irValue = IR_Decode(flagCode); 
     handleControl(irValue);
     IR_Release();
   }
-
-
+  
   if(type == 0) // If the program mode is humidity
   {
     // We check new humidity and if is different than the last_hum, we overwrite the last_hum variable with the new_hum value, and we parse the number
@@ -142,8 +142,6 @@ void temp(){
 }
 
 void handleControl(unsigned long value) {
-  
-  
   // Handle the commands
   switch (value) {
     case 0xFFA25D:                       // Receive POWER ON/OFF button
