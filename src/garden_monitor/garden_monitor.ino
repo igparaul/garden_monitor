@@ -22,7 +22,10 @@ int clockPin = 22;
 byte num[] = {0xc0, 0xf9, 0xa4, 0xb0, 0x99, 0x92, 0x82, 0xf8, 0x80, 0x90};
 
 int c = 0;
+int type = 0;
 int digits[4];
+int last_hum = 0;
+int last_temp = 0;
 
 void setup() {
   Serial.begin(115200);
@@ -47,6 +50,8 @@ void setup() {
 }
 
 void loop() {
+  int new_temp = 0;
+  int new_hum = 0;
   if(flagCode){
     int irValue = IR_Decode(flagCode);
     //Serial.println(irValue, HEX);
@@ -54,54 +59,86 @@ void loop() {
     IR_Release();
   }
 
+  if(type == 0)
+  {
+    new_hum = DHTMeasure(type, true);
+    if (new_hum != last_hum)
+    {
+      last_hum = new_hum;
+      parse_digits(last_hum);
+    }
+  }
+  else
+  {
+    new_temp = DHTMeasure(type, true);
+    if (new_temp != last_temp)
+    {
+      last_temp = new_temp;
+      parse_digits(last_temp);
+    }
+  }
+
   for (int i = 0; i < 4; i++) {
     // Select a single 7-segment display
     electDigitalDisplay (i);
     // Send data to 74HC595
     writeData(num[digits[i]], i);
-    delay(5);
+    delay(1);
     // Clear the display content
     writeData(0xff, i);
   }
 }
 
-void DHTMeasure(int type){
-  int32_t return_value = 0;
+int DHTMeasure(int type, bool check){
+  int measure = 0;
+  int aux = 0;
   int chk = DHT.read11(DHT11Pin);
-  int i = 3;
 
   if(chk == DHTLIB_OK){
     if(type == 0){
       Serial.println("Humidity: " + String(DHT.humidity) + "%");
-      return_value = (int) (DHT.humidity * 100);
+      measure = (int) (DHT.humidity * 100);
     }
     else{
       Serial.println("Temperature: " + String(DHT.temperature) + "C");
-      return_value = (int) (DHT.temperature * 100);
+      measure = (int) (DHT.temperature * 100);
     }
   }
 
-  Serial.println(return_value);
+  aux = measure;
 
-  while(return_value > 0){
-    digits[i] = return_value%10;
-    return_value = return_value/10;
+  if(check == true){
+    return aux;
+  }
+  else
+  {
+    parse_digits(measure);
+    return 0;
+  }
+}
+
+void parse_digits(int num)
+{
+  int i = 3;
+  while(num > 0){
+    digits[i] = num%10;
+    num = num/10;
     i--;
   }
-
-  Serial.println(String(digits[0]) + " " + String(digits[1]) + " " + String(digits[2]) + " " + String(digits[3]));
 }
 
 void hum(){
   digitalWrite(ledYellow, LOW);     // Turn off yellow LED 
   digitalWrite(ledBlue, HIGH);      // Turn on blue LED
-  DHTMeasure(0);
+  type = 0;
+  DHTMeasure(type, false);
 }
 
 void temp(){
   digitalWrite(ledBlue, LOW);       // Turn off blue LED 
   digitalWrite(ledYellow, HIGH);    // Turn on yellow LED
-  DHTMeasure(1);
+  type = 1;
+  DHTMeasure(type, false);
 }
 
 void handleControl(unsigned long value) {
@@ -125,7 +162,6 @@ void handleControl(unsigned long value) {
       }
     case 0xFF30CF:                      // Receive the number '1' HUM Mode
       hum();
-
       break;
     case 0xFF18E7:                      // Receive the number '2' TEMP Mode
       temp();
