@@ -19,6 +19,9 @@ The components used in this systems are shown below:
 - Yellow LED
 - Red LED
 - Green LED
+- 12 x 220 Ohm resistor
+- 2 x 10 K Ohm resistor
+- 1 K Ohm resistor
 - DHT11 sensor
 - IR Receiver
 - 74HC595 Shifter module
@@ -31,11 +34,13 @@ The components used in this systems are shown below:
 
 The system will be controlled with a IR remote control, but only enabling 3 buttons:
 
-- Power ON/OFF: This button will turn ON/OFF the water pump of the fountain and the sumbmersible LEDs in it.
+- Power ON/OFF: This button will turn ON/OFF the water pump of the fountain and the submersible LEDs in it.
 - Button '1': This button activates the humidity mode, if it was not activated yet, turning ON the blue LED on the box and displaying the ambient humidity (%).
 - Button '2': This button activates the temperature mode, if it was not activated yet, turning ON the yellow LED on the box and displaying the temperature (°C). 
 
 ## Specifications
+
+The solar panel output voltage ...
 
 ## Diagrams
 
@@ -50,3 +55,7 @@ The system will be controlled with a IR remote control, but only enabling 3 butt
 ### Connections diagram
 
 ![Garden monitor connections diagram](/media/connectionDiagram.jpg)
+
+## Libraries used
+
+The libraries used in this project are the DHT library and the IR library, both of the [Freenove repository](https://github.com/Freenove/Freenove_Ultimate_Starter_Kit_for_Raspberry_Pi_Pico/tree/master). 
