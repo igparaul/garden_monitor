@@ -14,12 +14,13 @@ dht DHT;
 
 int comPin[] = {19, 18, 17, 16}; // Common pin (anode) of 4 digit 7-segment display, one per 7-segment display
 
-int dataPin = 20; 
-int latchPin = 21;
-int clockPin = 22;
+#define dataPin = 20; 
+#define latchPin = 21;
+#define clockPin = 22;
 
 byte num[] = {0xc0, 0xf9, 0xa4, 0xb0, 0x99, 0x92, 0x82, 0xf8, 0x80, 0x90}; //Define encoding of characters 0-9
 
+// Declare global variables
 int counter = 0;    // Counter if the water pump is ON or not
 int type = 0;       // Variable for the type of measure of the DHT11 sensor
 int digits[4];      // Array of the 4 digits of the DHT11 measure
@@ -75,7 +76,6 @@ void loop() {
   {
     // We check new temperature and if it has varied 0.5 C, we overwrite the last_temp variable with the new_temp value, and we parse the number
     new_temp = DHTMeasure(type, true);
-    //if (abs(new_temp - last_temp) < 50)
     if ((new_temp % 50) == 0 && new_temp != last_temp)
     {
       last_temp = new_temp;
