@@ -1,4 +1,4 @@
-# Garden Monitor
+# Solar Water Pump
 
 ## Description
 
